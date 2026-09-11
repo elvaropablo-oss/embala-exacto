@@ -4,12 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { pages } from '../src/pages/pages.mjs';
 import { renderPage } from '../src/templates/site.mjs';
 import { site } from '../site.config.mjs';
-
-const analyticsId = 'G-GQ2SYEWZ36';
-const analyticsTag = `  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${analyticsId}"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analyticsId}');</script>`;
-const analyticsDisclosure = `La web utiliza Google Analytics para conocer visitas y uso general mediante el identificador ${analyticsId}. Google puede tratar datos técnicos de navegación según su propia política.`;
+import { applyAnalyticsConsent } from './analytics-consent.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -24,9 +19,10 @@ for (const page of pages) {
     ? path.join(dist, page.output)
     : page.path ? path.join(dist, page.path, 'index.html') : path.join(dist, 'index.html');
   await mkdir(path.dirname(destination), { recursive: true });
-  const html = renderPage(page)
-    .replace('<head>', `<head>\n${analyticsTag}`)
-    .replace(/Esta versión no instala Google Analytics[^<]*/, analyticsDisclosure);
+  const html = applyAnalyticsConsent(renderPage(page), {
+    measurementId: 'G-GQ2SYEWZ36',
+    storageKey: 'ee:v1:analytics-consent'
+  });
   await writeFile(destination, html, 'utf8');
 }
 
