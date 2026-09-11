@@ -15,9 +15,10 @@ export function applyCalculationExplanations(html, specs) {
     return items.map((item) => item.value).filter((value) => value !== '').join(' · ');
   };
   const displayValue = (form, field) => {
-    const [name, , unit = ''] = field;
+    const name = field[0];
+    const unit = field[2] || '';
     const value = rawValue(form, name);
-    return value === '' ? '' : `${value}${unit ? ` ${unit}` : ''}`;
+    return value === '' ? '' : value + (unit ? ' ' + unit : '');
   };
   const render = (form) => {
     const spec = specs[form.id];
