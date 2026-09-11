@@ -1,124 +1,23 @@
 export function applyShareableCalculations(html, formIds) {
   const allowed = JSON.stringify(formIds).replace(/</g, '\\u003c');
+  const style = `  <style data-result-actions>
+.result-standard-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1rem;align-items:center}.result-standard-actions .project-save-button{margin-top:0}@media print{.result-standard-actions,.project-save-button,.project-library-launcher{display:none!important}}
+  </style>`;
   const script = `  <script data-shareable-calculations>
 (() => {
-  const allowed = new Set(${allowed});
-  const param = 'calc';
-  const rowSelector = '.ingredient-row,.baker-row';
-  const eligible = (form) => form instanceof HTMLFormElement && allowed.has(form.id);
-  const rowsIn = (container) => [...container.children].filter((element) => element.matches?.(rowSelector));
-  const rowPosition = (row) => row?.parentElement ? rowsIn(row.parentElement).indexOf(row) : -1;
-  const plainOccurrence = (form, element) => [...form.elements]
-    .filter((candidate) => candidate.name === element.name && !candidate.closest(rowSelector))
-    .indexOf(element);
-  const encode = (form) => ({
-    v: 1,
-    f: form.id,
-    x: [...form.elements]
-      .filter((element) => element.name && !['button', 'submit', 'reset', 'file'].includes(element.type) && !element.disabled)
-      .map((element) => {
-        const row = element.closest(rowSelector);
-        const group = row?.parentElement?.id || '';
-        return [element.name, element.value, element.type || element.tagName.toLowerCase(), element.checked ? 1 : 0, group, row ? rowPosition(row) : -1, group ? -1 : plainOccurrence(form, element)];
-      })
-  });
-  const ensureRows = (form, fields) => {
-    const needs = new Map();
-    for (const field of fields) {
-      const group = field[4];
-      const index = field[5];
-      if (group && index >= 0) needs.set(group, Math.max(needs.get(group) ?? -1, index));
-    }
-    for (const [groupId, maxIndex] of needs) {
-      const group = document.getElementById(groupId);
-      if (!group || !form.contains(group)) continue;
-      let rows = rowsIn(group);
-      while (rows.length <= maxIndex && rows.length) {
-        const clone = rows.at(-1).cloneNode(true);
-        clone.querySelectorAll('input,select,textarea').forEach((element) => {
-          if (element.type === 'checkbox' || element.type === 'radio') element.checked = false;
-          else element.value = '';
-        });
-        clone.querySelectorAll('.remove-row').forEach((button) => button.addEventListener('click', () => clone.remove()));
-        group.append(clone);
-        rows = rowsIn(group);
-      }
-    }
-  };
-  const locate = (form, field) => {
-    const [name, , , , groupId, rowIndex, occurrence] = field;
-    if (groupId) {
-      const group = document.getElementById(groupId);
-      if (!group || !form.contains(group)) return null;
-      const row = rowsIn(group)[rowIndex];
-      return row ? [...row.querySelectorAll('[name]')].find((element) => element.name === name) || null : null;
-    }
-    return [...form.elements].filter((element) => element.name === name && !element.closest(rowSelector))[occurrence] || null;
-  };
-  const writeUrl = (form) => {
-    const url = new URL(location.href);
-    url.search = '';
-    url.hash = '';
-    url.searchParams.set(param, JSON.stringify(encode(form)));
-    history.replaceState(null, '', url);
-  };
-  const copyButton = (form) => {
-    const resultId = form.id.replace(/-form$/, '-result');
-    const result = document.getElementById(resultId);
-    if (!result || result.hidden || result.querySelector('[data-copy-calc-link]')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'button button--quiet';
-    button.dataset.copyCalcLink = '';
-    button.textContent = 'Copiar enlace a este cálculo';
-    button.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(location.href);
-      } catch {
-        const field = document.createElement('textarea');
-        field.value = location.href;
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.append(field);
-        field.select();
-        document.execCommand('copy');
-        field.remove();
-      }
-      button.textContent = 'Enlace copiado';
-      setTimeout(() => { button.textContent = 'Copiar enlace a este cálculo'; }, 1800);
-    });
-    result.append(button);
-  };
-  document.addEventListener('submit', (event) => {
-    const form = event.target;
-    if (!eligible(form)) return;
-    writeUrl(form);
-    setTimeout(() => copyButton(form), 0);
-  }, true);
-  window.addEventListener('load', () => {
-    const raw = new URL(location.href).searchParams.get(param);
-    if (!raw) return;
-    let state;
-    try { state = JSON.parse(raw); } catch { return; }
-    if (state?.v !== 1 || !allowed.has(state.f) || !Array.isArray(state.x)) return;
-    const form = document.getElementById(state.f);
-    if (!eligible(form)) return;
-    ensureRows(form, state.x);
-    const touched = [];
-    for (const field of state.x) {
-      const element = locate(form, field);
-      if (!element) continue;
-      if (field[2] === 'checkbox' || field[2] === 'radio') element.checked = field[3] === 1;
-      else element.value = field[1];
-      touched.push(element);
-    }
-    touched.forEach((element) => {
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-    setTimeout(() => form.requestSubmit(), 0);
-  });
+  const allowed = new Set(${allowed}); const param='calc',rowSelector='.ingredient-row,.baker-row';
+  const eligible=(form)=>form instanceof HTMLFormElement&&allowed.has(form.id),rowsIn=(c)=>[...c.children].filter((e)=>e.matches?.(rowSelector)),rowPosition=(r)=>r?.parentElement?rowsIn(r.parentElement).indexOf(r):-1,plainOccurrence=(form,e)=>[...form.elements].filter((c)=>c.name===e.name&&!c.closest(rowSelector)).indexOf(e);
+  const encode=(form)=>({v:1,f:form.id,x:[...form.elements].filter((e)=>e.name&&!['button','submit','reset','file'].includes(e.type)&&!e.disabled).map((e)=>{const r=e.closest(rowSelector),g=r?.parentElement?.id||'';return[e.name,e.value,e.type||e.tagName.toLowerCase(),e.checked?1:0,g,r?rowPosition(r):-1,g?-1:plainOccurrence(form,e)]})});
+  const ensureRows=(form,fields)=>{const needs=new Map();for(const field of fields){const g=field[4],i=field[5];if(g&&i>=0)needs.set(g,Math.max(needs.get(g)??-1,i))}for(const[g,max]of needs){const group=document.getElementById(g);if(!group||!form.contains(group))continue;let rows=rowsIn(group);while(rows.length<=max&&rows.length){const clone=rows.at(-1).cloneNode(true);clone.querySelectorAll('input,select,textarea').forEach((e)=>{if(e.type==='checkbox'||e.type==='radio')e.checked=false;else e.value=''});clone.querySelectorAll('.remove-row').forEach((b)=>b.addEventListener('click',()=>clone.remove()));group.append(clone);rows=rowsIn(group)}}};
+  const locate=(form,field)=>{const[name,,,,g,rowIndex,occurrence]=field;if(g){const group=document.getElementById(g);if(!group||!form.contains(group))return null;const row=rowsIn(group)[rowIndex];return row?[...row.querySelectorAll('[name]')].find((e)=>e.name===name)||null:null}return[...form.elements].filter((e)=>e.name===name&&!e.closest(rowSelector))[occurrence]||null};
+  const writeUrl=(form)=>{const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set(param,JSON.stringify(encode(form)));history.replaceState(null,'',url)};
+  const copyText=async(text)=>{if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);const f=document.createElement('textarea');f.value=text;f.style.position='fixed';f.style.opacity='0';document.body.append(f);f.select();document.execCommand('copy');f.remove()};
+  const resultText=(result)=>{const clone=result.cloneNode(true);clone.querySelectorAll('button,a,.result-standard-actions,[data-save-project],script,style').forEach((e)=>e.remove());const text=(clone.textContent||'').replace(/[ \t]+/g,' ').replace(/\n\s*\n+/g,'\n').trim(),title=(document.querySelector('h1')?.textContent||document.title||'Resultado').trim();return title+'\n\n'+text+'\n\n'+location.href};
+  const flash=(b,t,w=1600)=>{const p=b.textContent;b.textContent=t;setTimeout(()=>b.textContent=p,w)},addButton=(actions,key,label,handler)=>{if(actions.querySelector('[data-result-action="'+key+'"]'))return;const b=document.createElement('button');b.type='button';b.className='button button--quiet';b.dataset.resultAction=key;b.textContent=label;b.addEventListener('click',handler);actions.append(b)};
+  const ensureActions=(form)=>{const result=document.getElementById(form.id.replace(/-form$/,'-result'));if(!result||result.hidden)return;result.querySelectorAll('[data-copy-calc-link]').forEach((e)=>e.remove());let actions=result.querySelector('.result-standard-actions');if(!actions){actions=document.createElement('div');actions.className='result-standard-actions';actions.setAttribute('aria-label','Acciones del resultado');result.append(actions)}addButton(actions,'copy-result','Copiar resultado',async(e)=>{try{await copyText(resultText(result));flash(e.currentTarget,'Resultado copiado')}catch{flash(e.currentTarget,'No se pudo copiar')}});addButton(actions,'copy-link','Copiar enlace',async(e)=>{writeUrl(form);try{await copyText(location.href);flash(e.currentTarget,'Enlace copiado')}catch{flash(e.currentTarget,'No se pudo copiar')}});addButton(actions,'share','Compartir',async(e)=>{writeUrl(form);const title=(document.querySelector('h1')?.textContent||document.title||'Cálculo').trim();try{if(navigator.share)await navigator.share({title,text:'Resultado calculado',url:location.href});else{await copyText(location.href);flash(e.currentTarget,'Enlace copiado')}}catch(error){if(error?.name!=='AbortError')flash(e.currentTarget,'No se pudo compartir')}});addButton(actions,'print','Imprimir / PDF',()=>window.print());setTimeout(()=>{const save=result.querySelector('[data-save-project]');if(save&&save.parentElement!==actions)actions.append(save)},40)};
+  document.addEventListener('submit',(event)=>{const form=event.target;if(!eligible(form))return;writeUrl(form);setTimeout(()=>ensureActions(form),0)},true);
+  window.addEventListener('load',()=>{const raw=new URL(location.href).searchParams.get(param);if(!raw)return;let state;try{state=JSON.parse(raw)}catch{return}if(state?.v!==1||!allowed.has(state.f)||!Array.isArray(state.x))return;const form=document.getElementById(state.f);if(!eligible(form))return;ensureRows(form,state.x);const touched=[];for(const field of state.x){const e=locate(form,field);if(!e)continue;if(field[2]==='checkbox'||field[2]==='radio')e.checked=field[3]===1;else e.value=field[1];touched.push(e)}touched.forEach((e)=>{e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))});setTimeout(()=>form.requestSubmit(),0)});
 })();
   </script>`;
-  return html.replace('</body>', `${script}\n</body>`);
+  return html.replace('</head>', `${style}\n</head>`).replace('</body>', `${script}\n</body>`);
 }
