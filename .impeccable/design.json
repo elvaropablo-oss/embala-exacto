@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "project": "EmbalaExacto",
+  "northStar": "A vivid, precise dispatch table where the box, label and every axis are understood at a glance.",
+  "palette": {"ultramarine":"#1712a6","signalOrange":"#ff5c35","tapeYellow":"#ffd43b","thermalPaper":"#f7f5ef","ink":"#101010"},
+  "typography": {"display":"Arial Black / Arial","body":"Segoe UI Variable / Aptos","data":"Cascadia Mono / Consolas"},
+  "geometry": {"corners":"square","depth":"solid black offsets","motif":"parcel, packing tape and thermal shipping labels"},
+  "motion": {"buttonPress":"130ms","reducedMotion":true},
+  "breakpoints":[860,590],
+  "components":["parcel-brand","labelled-parcel-hero","dispatch-station-card","dimension-form","thermal-result-label"]
+}
