@@ -21,7 +21,15 @@ export function renderPage(page) {
   const schema = JSON.stringify(page.schema || {
     '@context': 'https://schema.org', '@type': page.tool ? 'WebApplication' : 'WebPage',
     name: page.h1, url: canonical, description: page.description, inLanguage: 'es-ES',
-    ...(page.tool ? { applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any', offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } } : {})
+    ...(page.tool ? { applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any', isAccessibleForFree: true, browserRequirements: 'Navegador web moderno con JavaScript', offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } } : {})
+  }).replace(/</g, '\\u003c');
+  const breadcrumbSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${site.origin}${base}` },
+      ...(page.path ? [{ '@type': 'ListItem', position: 2, name: page.h1, item: canonical }] : [])
+    ]
   }).replace(/</g, '\\u003c');
   const pageClass = `page-${clean(page.path).replaceAll('/', '-') || 'inicio'}`;
   const nav = (path, label) => `<a href="${base}${path}"${active(page.path, path) ? ' aria-current="page"' : ''}>${label}</a>`;
@@ -32,11 +40,21 @@ export function renderPage(page) {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${page.title}</title>
   <meta name="description" content="${page.description}">
-  ${page.noindex ? '<meta name="robots" content="noindex,follow">' : ''}
+  <meta name="robots" content="${page.noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large'}">
   <link rel="canonical" href="${canonical}">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="${site.name}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${page.title}">
+  <meta property="og:description" content="${page.description}">
+  <meta property="og:url" content="${canonical}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${page.title}">
+  <meta name="twitter:description" content="${page.description}">
   <link rel="icon" href="${base}assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="${base}assets/site.css">
   <script type="application/ld+json">${schema}</script>
+  <script type="application/ld+json">${breadcrumbSchema}</script>
   <script type="module" src="${base}assets/app.js"></script>
   <script type="module" src="${base}assets/visuals.js"></script>
   <script type="module" src="${base}assets/quality-fixes.js"></script>
