@@ -37,7 +37,7 @@ export function applyAnalyticsConsent(html, { measurementId, storageKey }) {
     document.addEventListener('DOMContentLoaded', () => {
       const banner = document.querySelector('[data-analytics-consent]');
       if (!banner) return;
-      const show = () => { banner.hidden = false; banner.querySelector('[data-analytics-choice="granted"]')?.focus(); };
+      const show = (focus = false) => { banner.hidden = false; if (focus) banner.querySelector('[data-analytics-choice="granted"]')?.focus({ preventScroll: true }); };
       const hide = () => { banner.hidden = true; };
       if (!['granted', 'denied'].includes(readChoice())) show();
       banner.querySelectorAll('[data-analytics-choice]').forEach((button) => button.addEventListener('click', () => {
@@ -54,7 +54,7 @@ export function applyAnalyticsConsent(html, { measurementId, storageKey }) {
         settings.className = 'analytics-consent__settings';
         settings.dataset.analyticsSettings = '';
         settings.textContent = 'Preferencias de analítica';
-        settings.addEventListener('click', show);
+        settings.addEventListener('click', () => show(true));
         footer.append(settings);
       }
     });
