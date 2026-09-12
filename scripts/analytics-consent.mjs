@@ -13,7 +13,13 @@ export function applyAnalyticsConsent(html, { measurementId, storageKey }) {
     let loaded = false;
     const readChoice = () => { try { return localStorage.getItem(storageKey); } catch { return null; } };
     const writeChoice = (value) => { try { localStorage.setItem(storageKey, value); } catch {} };
+    window['ga-disable-' + measurementId] = readChoice() !== 'granted';
+    const updateConsent = (granted) => {
+      window['ga-disable-' + measurementId] = !granted;
+      if (typeof window.gtag === 'function') window.gtag('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+    };
     const loadAnalytics = () => {
+      updateConsent(true);
       if (loaded || document.querySelector('script[data-site-analytics]')) return;
       loaded = true;
       window.dataLayer = window.dataLayer || [];
@@ -38,7 +44,7 @@ export function applyAnalyticsConsent(html, { measurementId, storageKey }) {
         const choice = button.dataset.analyticsChoice;
         writeChoice(choice);
         if (choice === 'granted') loadAnalytics();
-        else if (typeof window.gtag === 'function') window.gtag('consent', 'update', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+        else updateConsent(false);
         hide();
       }));
       const footer = document.querySelector('footer nav') || document.querySelector('footer');
